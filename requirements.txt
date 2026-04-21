@@ -1,0 +1,10 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.9
+speechbrain>=1.0
+silero-vad>=5.1
+torch>=2.1
+torchaudio>=2.1
+numpy>=1.24
+soundfile>=0.12
+websockets>=12.0
