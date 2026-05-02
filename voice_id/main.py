@@ -60,14 +60,21 @@ app = FastAPI(title="Voice ID Service", lifespan=lifespan)
 
 
 def _load_any_audio_to_16k_mono(path: Path) -> np.ndarray:
-    """Read any audio file torchaudio supports and return 1-D float32 at 16 kHz."""
-    signal, sr = torchaudio.load(str(path))
-    if signal.shape[0] > 1:
-        signal = signal.mean(dim=0, keepdim=True)
-    if sr != config.TARGET_SAMPLE_RATE:
-        signal = torchaudio.transforms.Resample(sr, config.TARGET_SAMPLE_RATE)(signal)
-    return signal.squeeze().numpy().astype(np.float32)
+    """Read an audio file and return 1-D float32 at 16 kHz mono."""
+    import soundfile as sf
+    from scipy.signal import resample_poly
+    from math import gcd
 
+    audio, sr = sf.read(str(path), dtype="float32", always_2d=False)
+    if audio.ndim > 1:
+        audio = audio.mean(axis=1)
+    audio = audio.astype(np.float32)
+    if sr != config.TARGET_SAMPLE_RATE:
+        g = gcd(sr, config.TARGET_SAMPLE_RATE)
+        up = config.TARGET_SAMPLE_RATE // g
+        down = sr // g
+        audio = resample_poly(audio, up, down).astype(np.float32)
+    return audio
 
 # ---------------------------------------------------------------- HTTP routes
 
