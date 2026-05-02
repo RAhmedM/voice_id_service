@@ -34,7 +34,9 @@ HPF_CUTOFF_HZ = 80.0            # High-pass cutoff applied before embedding
 TARGET_RMS = 0.1                # Level-normalize each clip to this RMS
 
 # -------- WebSocket session --------
-WS_IDLE_TIMEOUT_S = 30.0        # Drop the connection if no audio arrives for this long
+WS_IDLE_TIMEOUT_S = 60.0        # Drop the connection if no audio arrives for this long.
+# 60 s gives breathing room for inter-stage gaps in the EAGI client (the audio
+# stream pauses briefly between streamer sessions and during API calls).
 WS_MAX_SESSION_S = 1800.0       # Hard ceiling on a single call (30 min)
 
 # -------- Storage --------

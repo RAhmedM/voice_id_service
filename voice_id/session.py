@@ -81,6 +81,14 @@ class IdentificationSession:
         if self._abort:
             return
 
+        # Defensive: drop a trailing odd byte rather than crashing the session.
+        # Asterisk slin always sends even byte counts, but be tolerant of any
+        # client that proxies the stream and miscounts.
+        if len(pcm_bytes) & 1:
+            pcm_bytes = pcm_bytes[:-1]
+        if not pcm_bytes:
+            return
+
         audio_i16 = np.frombuffer(pcm_bytes, dtype=np.int16)
         audio_f32 = audio_i16.astype(np.float32) / 32768.0
         self._raw_buffer = np.concatenate([self._raw_buffer, audio_f32])
