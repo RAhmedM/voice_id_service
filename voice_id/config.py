@@ -7,23 +7,35 @@ MODEL_SAVEDIR = os.environ.get("MODEL_SAVEDIR", "pretrained_models/spkrec-ecapa-
 DEVICE = os.environ.get("DEVICE", "cpu")  # "cpu" or "cuda"
 
 # -------- Audio --------
-INPUT_SAMPLE_RATE = 8000        # Asterisk slin format from EAGI
+INPUT_SAMPLE_RATE = 8000        # Asterisk slin format
 TARGET_SAMPLE_RATE = 16000      # What ECAPA expects
 VAD_FRAME_SAMPLES = 256         # Silero VAD at 8 kHz requires exactly 256 samples per call
 
 # -------- VAD --------
-VAD_THRESHOLD = 0.5             # Silero speech probability cutoff
+VAD_THRESHOLD = 0.35            # Lower than the stock 0.5; phone audio is noisier.
 
 # -------- Utterance detection --------
-MIN_SPEECH_SECONDS = 3.0        # Minimum speech before we attempt identification
-MAX_SPEECH_SECONDS = 6.0        # Force identification once we reach this much
-END_OF_UTTERANCE_SILENCE_MS = 500  # Silence duration that marks end of utterance
+MIN_SPEECH_SECONDS = 4.0        # Minimum speech before we attempt identification
+IDENTIFICATION_WINDOW_SECONDS = 6.0  # Sliding window of recent speech used for inference
+END_OF_UTTERANCE_SILENCE_MS = 750  # Silence duration that marks end of utterance (first id only)
 TRAILING_SILENCE_FRAMES = 3     # Silence frames appended to speech buffer for smooth tail
+
+# -------- Re-identification --------
+ENABLE_REIDENTIFICATION = True  # Keep identifying throughout the call (handoff / spoof detection)
+REID_INTERVAL_SECONDS = 3.0     # Speech-time cadence between successive re-identifications
 
 # -------- Identification --------
 IDENTIFICATION_THRESHOLD = 0.50  # Cosine similarity cutoff for non-"unknown"
 # NOTE: calibrate this properly once you have real phone-audio data.
 # Clean wideband: 0.45-0.55 is typical. Phone audio tends to need lower, 0.35-0.45.
+
+# -------- Preprocessing --------
+HPF_CUTOFF_HZ = 80.0            # High-pass cutoff applied before embedding
+TARGET_RMS = 0.1                # Level-normalize each clip to this RMS
+
+# -------- WebSocket session --------
+WS_IDLE_TIMEOUT_S = 30.0        # Drop the connection if no audio arrives for this long
+WS_MAX_SESSION_S = 1800.0       # Hard ceiling on a single call (30 min)
 
 # -------- Storage --------
 VOICEPRINT_DB_PATH = os.environ.get("VOICEPRINT_DB_PATH", "voiceprints.pkl")
@@ -33,4 +45,5 @@ END_OF_UTTERANCE_SILENCE_FRAMES = int(
     (END_OF_UTTERANCE_SILENCE_MS / 1000) * INPUT_SAMPLE_RATE / VAD_FRAME_SAMPLES
 )
 MIN_SPEECH_SAMPLES = int(MIN_SPEECH_SECONDS * INPUT_SAMPLE_RATE)
-MAX_SPEECH_SAMPLES = int(MAX_SPEECH_SECONDS * INPUT_SAMPLE_RATE)
+IDENTIFICATION_WINDOW_SAMPLES = int(IDENTIFICATION_WINDOW_SECONDS * INPUT_SAMPLE_RATE)
+REID_INTERVAL_SAMPLES = int(REID_INTERVAL_SECONDS * INPUT_SAMPLE_RATE)

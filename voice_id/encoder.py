@@ -1,13 +1,15 @@
 """ECAPA-TDNN speaker encoder wrapper.
 
 One instance is shared across all sessions. Inference is stateless and safe
-to call concurrently (PyTorch serializes at the C++ level anyway).
+to call concurrently. Preprocessing (HPF + RMS-normalize) is applied here so
+the enrollment and inference paths cannot diverge.
 """
 import numpy as np
 import torch
 from speechbrain.inference.speaker import EncoderClassifier
 
 from . import config
+from .audio import preprocess_for_embed
 
 
 class SpeakerEncoder:
@@ -23,6 +25,8 @@ class SpeakerEncoder:
         """Convert 16 kHz float32 mono audio into a 192-dim L2-normalized embedding."""
         if audio_16k_f32.ndim != 1:
             raise ValueError(f"expected 1-D audio, got shape {audio_16k_f32.shape}")
+
+        audio_16k_f32 = preprocess_for_embed(audio_16k_f32)
 
         signal = torch.from_numpy(audio_16k_f32).float().unsqueeze(0)
         if self.device != "cpu":

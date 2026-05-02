@@ -20,10 +20,18 @@ class VoiceprintStore:
         self._db: Dict[str, np.ndarray] = self._load()
 
     def _load(self) -> Dict[str, np.ndarray]:
-        if self.path.exists():
-            with open(self.path, "rb") as f:
-                return pickle.load(f)
-        return {}
+        if not self.path.exists():
+            return {}
+        with open(self.path, "rb") as f:
+            db = pickle.load(f)
+        # Cosine similarity == dot product only when both vectors are unit-norm.
+        # Re-normalize on load so this invariant survives any external write
+        # path (manual restores, future migrations) that might forget to.
+        for name, vec in db.items():
+            arr = np.asarray(vec, dtype=np.float32)
+            n = np.linalg.norm(arr)
+            db[name] = arr / n if n > 0 else arr
+        return db
 
     def _save(self) -> None:
         tmp = self.path.with_suffix(self.path.suffix + ".tmp")
